@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stacking Checkers</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #1e3a5f;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+
+        .container {
+            max-width: 56rem;
+            width: 100%;
+        }
+
+        h1 {
+            font-size: clamp(2rem, 5vw, 2.5rem);
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #fef3c7;
+        }
+
+        .difficulty-panel {
+            background-color: #78350f;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+
+        .difficulty-panel h2 {
+            font-size: clamp(1.25rem, 4vw, 1.5rem);
+            font-weight: bold;
+            color: #fef3c7;
+            margin-bottom: 1rem;
+        }
+
+        .difficulty-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        @media (min-width: 640px) {
+            .difficulty-buttons {
+                flex-direction: row;
+                justify-content: center;
+            }
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: white;
+        }
+
+        .btn-easy {
+            background-color: #15803d;
+        }
+
+        .btn-easy:hover {
+            background-color: #16a34a;
+        }
+
+        .btn-medium {
+            background-color: #a16207;
+        }
+
+        .btn-medium:hover {
+            background-color: #ca8a04;
+        }
+
+        .btn-hard {
+            background-color: #b91c1c;
+        }
+
+        .btn-hard:hover {
+            background-color: #dc2626;
+        }
+
+        .btn-new-game {
+            background-color: #92400e;
+            width: 100%;
+        }
+
+        .btn-new-game:hover {
+            background-color: #b45309;
+        }
+
+        .message-box {
+            background-color: #78350f;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .message-box p {
+            font-size: clamp(1rem, 3vw, 1.25rem);
+            font-weight: 600;
+            color: #fef3c7;
+        }
+
+        .board-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .board {
+            display: inline-block;
+            border: 8px solid #8B4513;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            transform: perspective(1200px) rotateX(30deg);
+            transform-style: preserve-3d;
+        }
+
+        @media (max-width: 640px) {
+            .board {
+                border-width: 4px;
+            }
+        }
+
+        .board-row {
+            display: flex;
+        }
+
+        .square {
+            width: clamp(40px, 10vw, 80px);
+            height: clamp(40px, 10vw, 80px);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            border-top: 1px solid rgba(0,0,0,0.1);
+            padding-bottom: clamp(4px, 1vw, 8px);
+        }
+
+        .square-light {
+            background-color: #DEB887;
+        }
+
+        .square-dark {
+            background-color: #8B4513;
+        }
+
+        .square-selected {
+            box-shadow: inset 0 0 0 3px #FFD700;
+        }
+
+        .valid-move-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: clamp(16px, 3vw, 20px);
+            height: clamp(16px, 3vw, 20px);
+            background-color: #4ade80;
+            border-radius: 50%;
+            opacity: 0.7;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                opacity: 0.7;
+            }
+            50% {
+                opacity: 0.4;
+            }
+        }
+
+        .piece-container {
+            position: relative;
+            display: flex;
+            flex-direction: column-reverse;
+            align-items: center;
+            perspective: 200px;
+        }
+
+        .piece {
+            width: clamp(36px, 8vw, 52px);
+            height: clamp(12px, 3vw, 18px);
+            border-radius: 50%;
+            box-shadow: 0 3px 6px rgba(0,0,0,0.5), inset 0 -2px 3px rgba(0,0,0,0.3);
+            border: 2px solid;
+            position: relative;
+            transform: rotateX(65deg);
+            transition: transform 0.2s;
+        }
+
+        .piece:hover {
+            transform: rotateX(65deg) scale(1.05);
+        }
+
+        .piece-light {
+            background-color: #F5DEB3;
+            border-color: #D2B48C;
+        }
+
+        .piece-dark {
+            background-color: #3E2723;
+            border-color: #2C1810;
+        }
+
+        .crown {
+            position: absolute;
+            top: clamp(-20px, -4vw, -24px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .crown-light {
+            color: #8B4513;
+        }
+
+        .crown-dark {
+            color: #F5DEB3;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Stacking Checkers</h1>
+        
+        <div id="difficultyPanel" class="difficulty-panel">
+            <h2>Select Difficulty</h2>
+            <div class="difficulty-buttons">
+                <button class="btn btn-easy" onclick="startGame('easy')">Easy</button>
+                <button class="btn btn-medium" onclick="startGame('medium')">Medium</button>
+                <button class="btn btn-hard" onclick="startGame('hard')">Hard</button>
+            </div>
+        </div>
+
+        <div class="message-box">
+            <p id="message">Select difficulty to start</p>
+        </div>
+
+        <div class="board-container">
+            <div id="board" class="board"></div>
+        </div>
+
+        <div>
+            <button class="btn btn-new-game" onclick="newGame()">New Game</button>
+        </div>
+    </div>
+
+    <script>
+        let board = [];
+        let selectedSquare = null;
+        let validMoves = [];
+        let currentPlayer = 'light';
+        let difficulty = 'medium';
+        let gameStarted = false;
+        let animating = false;
+        let audioContext = null;
+
+        function initializeBoard() {
+            board = Array(8).fill(null).map(() => Array(8).fill(null));
+            
+            for (let row = 0; row < 3; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if ((row + col) % 2 === 1) {
+                        board[row][col] = { stack: ['light'], isKing: false };
+                    }
+                }
+            }
+            
+            for (let row = 5; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    if ((row + col) % 2 === 1) {
+                        board[row][col] = { stack: ['dark'], isKing: false };
+                    }
+                }
+            }
+            
+            selectedSquare = null;
+            validMoves = [];
+            currentPlayer = 'light';
+            animating = false;
+            renderBoard();
+            setMessage('Your turn - Light pieces');
+        }
+
+        function playSound() {
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 400;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.1);
+            } catch (e) {
+                // Silently fail if audio doesn't work
+            }
+        }
+
+        function getOwner(piece) {
+            return piece.stack[piece.stack.length - 1];
+        }
+
+        function calculateValidMoves(row, col, currentBoard, mustCapture = null) {
+            const piece = currentBoard[row][col];
+            if (!piece) return [];
+
+            const moves = [];
+            const owner = getOwner(piece);
+            const isKing = piece.isKing;
+
+            const captures = [];
+            for (const [dr, dc] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+                const jumpRow = row + dr;
+                const jumpCol = col + dc;
+                const landRow = row + dr * 2;
+                const landCol = col + dc * 2;
+
+                if (landRow >= 0 && landRow < 8 && landCol >= 0 && landCol < 8) {
+                    const jumpPiece = currentBoard[jumpRow][jumpCol];
+                    const landPiece = currentBoard[landRow][landCol];
+
+                    if (jumpPiece && getOwner(jumpPiece) !== owner && !landPiece) {
+                        captures.push({ row: landRow, col: landCol, captureRow: jumpRow, captureCol: jumpCol });
+                    }
+                }
+            }
+
+            if (mustCapture === true || captures.length > 0) {
+                return captures;
+            }
+
+            if (mustCapture === false) {
+                const directions = isKing 
+                    ? [[-1, -1], [-1, 1], [1, -1], [1, 1]] 
+                    : owner === 'light' 
+                        ? [[1, -1], [1, 1]]
+                        : [[-1, -1], [-1, 1]];
+
+                for (const [dr, dc] of directions) {
+                    const newRow = row + dr;
+                    const newCol = col + dc;
+
+                    if (newRow >= 0 && newRow < 8 && newCol >= 0 && newCol < 8 && !currentBoard[newRow][newCol]) {
+                        moves.push({ row: newRow, col: newCol });
+                    }
+                }
+            }
+
+            return moves;
+        }
+
+        function hasAnyCaptures(player, currentBoard) {
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = currentBoard[row][col];
+                    if (piece && getOwner(piece) === player) {
+                        const captures = calculateValidMoves(row, col, currentBoard, true);
+                        if (captures.length > 0) return true;
+                    }
+                }
+            }
+            return false;
+        }
+
+        function handleSquareClick(row, col) {
+            if (animating || currentPlayer !== 'light' || !gameStarted) return;
+
+            const piece = board[row][col];
+
+            if (piece && getOwner(piece) === currentPlayer) {
+                const mustCapture = hasAnyCaptures(currentPlayer, board);
+                const moves = calculateValidMoves(row, col, board, mustCapture);
+                
+                if (moves.length > 0) {
+                    selectedSquare = { row, col };
+                    validMoves = moves;
+                    playSound();
+                    renderBoard();
+                }
+                return;
+            }
+
+            if (selectedSquare) {
+                const move = validMoves.find(m => m.row === row && m.col === col);
+                if (move) {
+                    makeMove(selectedSquare.row, selectedSquare.col, row, col, move.captureRow, move.captureCol);
+                }
+            }
+        }
+
+        async function makeMove(fromRow, fromCol, toRow, toCol, captureRow, captureCol) {
+            animating = true;
+            playSound();
+
+            const newBoard = board.map(row => row.map(cell => cell ? { ...cell, stack: [...cell.stack] } : null));
+            const piece = newBoard[fromRow][fromCol];
+
+            if (captureRow !== undefined) {
+                const capturedPiece = newBoard[captureRow][captureCol];
+                piece.stack = [...capturedPiece.stack, ...piece.stack];
+                newBoard[captureRow][captureCol] = null;
+            }
+
+            newBoard[fromRow][fromCol] = null;
+            newBoard[toRow][toCol] = piece;
+
+            if ((currentPlayer === 'light' && toRow === 7) || (currentPlayer === 'dark' && toRow === 0)) {
+                piece.isKing = true;
+            }
+
+            board = newBoard;
+            selectedSquare = null;
+            validMoves = [];
+            renderBoard();
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const canCaptureAgain = calculateValidMoves(toRow, toCol, newBoard, true).length > 0;
+            
+            if (captureRow !== undefined && canCaptureAgain) {
+                selectedSquare = { row: toRow, col: toCol };
+                validMoves = calculateValidMoves(toRow, toCol, newBoard, true);
+                animating = false;
+                renderBoard();
+                return;
+            }
+
+            const nextPlayer = currentPlayer === 'light' ? 'dark' : 'light';
+            currentPlayer = nextPlayer;
+            animating = false;
+
+            if (nextPlayer === 'dark') {
+                setMessage('AI is thinking...');
+                setTimeout(() => makeAIMove(newBoard, nextPlayer), 800);
+            } else {
+                setMessage('Your turn - Light pieces');
+            }
+        }
+
+        function makeAIMove(currentBoard, player) {
+            if (player !== 'dark') return;
+            
+            const aiMoves = [];
+            const mustCapture = hasAnyCaptures('dark', currentBoard);
+
+            for (let row = 0; row < 8; row++) {
+                for (let col = 0; col < 8; col++) {
+                    const piece = currentBoard[row][col];
+                    if (piece && getOwner(piece) === 'dark') {
+                        const moves = calculateValidMoves(row, col, currentBoard, mustCapture);
+                        moves.forEach(move => {
+                            aiMoves.push({ fromRow: row, fromCol: col, ...move });
+                        });
+                    }
+                }
+            }
+
+            if (aiMoves.length === 0) {
+                setMessage('You win! AI has no moves.');
+                gameStarted = false;
+                return;
+            }
+
+            let chosenMove;
+            if (difficulty === 'easy') {
+                chosenMove = aiMoves[Math.floor(Math.random() * aiMoves.length)];
+            } else if (difficulty === 'medium') {
+                const captureMoves = aiMoves.filter(m => m.captureRow !== undefined);
+                if (captureMoves.length > 0) {
+                    chosenMove = captureMoves[Math.floor(Math.random() * captureMoves.length)];
+                } else {
+                    chosenMove = aiMoves[Math.floor(Math.random() * aiMoves.length)];
+                }
+            } else {
+                const captureMoves = aiMoves.filter(m => m.captureRow !== undefined);
+                if (captureMoves.length > 0) {
+                    captureMoves.sort((a, b) => {
+                        const stackA = currentBoard[a.captureRow][a.captureCol].stack.length;
+                        const stackB = currentBoard[b.captureRow][b.captureCol].stack.length;
+                        return stackB - stackA;
+                    });
+                    chosenMove = captureMoves[0];
+                } else {
+                    chosenMove = aiMoves[Math.floor(Math.random() * aiMoves.length)];
+                }
+            }
+
+            executeAIMove(chosenMove, currentBoard);
+        }
+
+        async function executeAIMove(move, currentBoardState) {
+            animating = true;
+            playSound();
+
+            const newBoard = currentBoardState.map(row => row.map(cell => cell ? { ...cell, stack: [...cell.stack] } : null));
+            const piece = newBoard[move.fromRow][move.fromCol];
+
+            if (move.captureRow !== undefined) {
+                const capturedPiece = newBoard[move.captureRow][move.captureCol];
+                piece.stack = [...capturedPiece.stack, ...piece.stack];
+                newBoard[move.captureRow][move.captureCol] = null;
+            }
+
+            newBoard[move.fromRow][move.fromCol] = null;
+            newBoard[move.row][move.col] = piece;
+
+            if (move.row === 0) {
+                piece.isKing = true;
+            }
+
+            board = newBoard;
+            renderBoard();
+
+            await new Promise(resolve => setTimeout(resolve, 300));
+
+            const canCaptureAgain = calculateValidMoves(move.row, move.col, newBoard, true).length > 0;
+            
+            if (move.captureRow !== undefined && canCaptureAgain) {
+                const nextMoves = calculateValidMoves(move.row, move.col, newBoard, true);
+                const nextMove = nextMoves[Math.floor(Math.random() * nextMoves.length)];
+                executeAIMove({ fromRow: move.row, fromCol: move.col, ...nextMove }, newBoard);
+                return;
+            }
+
+            currentPlayer = 'light';
+            animating = false;
+            setMessage('Your turn - Light pieces');
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+
+            for (let row = 0; row < 8; row++) {
+                const rowEl = document.createElement('div');
+                rowEl.className = 'board-row';
+
+                for (let col = 0; col < 8; col++) {
+                    const isLight = (row + col) % 2 === 0;
+                    const isSelected = selectedSquare?.row === row && selectedSquare?.col === col;
+                    const isValidMove = validMoves.some(m => m.row === row && m.col === col);
+                    
+                    const squareEl = document.createElement('div');
+                    squareEl.className = `square ${isLight ? 'square-light' : 'square-dark'} ${isSelected ? 'square-selected' : ''}`;
+                    squareEl.onclick = () => handleSquareClick(row, col);
+
+                    if (isValidMove) {
+                        const indicator = document.createElement('div');
+                        indicator.className = 'valid-move-indicator';
+                        squareEl.appendChild(indicator);
+                    }
+
+                    const cell = board[row][col];
+                    if (cell) {
+                        const container = document.createElement('div');
+                        container.className = 'piece-container';
+
+                        cell.stack.forEach((color, idx) => {
+                            const piece = document.createElement('div');
+                            piece.className = `piece piece-${color}`;
+                            if (idx > 0) {
+                                piece.style.marginTop = 'clamp(-6px, -1vw, -4px)';
+                            }
+                            piece.style.zIndex = idx;
+                            container.appendChild(piece);
+                        });
+
+                        if (cell.isKing) {
+                            const crown = document.createElement('div');
+                            crown.className = `crown crown-${getOwner(cell)}`;
+                            crown.innerHTML = `<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2 2 7 12 3-5 3 5 7-12M3 19h18"/></svg>`;
+                            crown.style.zIndex = cell.stack.length + 1;
+                            container.appendChild(crown);
+                        }
+
+                        squareEl.appendChild(container);
+                    }
+
+                    rowEl.appendChild(squareEl);
+                }
+
+                boardEl.appendChild(rowEl);
+            }
+        }
+
+        function setMessage(msg) {
+            document.getElementById('message').textContent = msg;
+        }
+
+        function startGame(diff) {
+            difficulty = diff;
+            gameStarted = true;
+            document.getElementById('difficultyPanel').classList.add('hidden');
+            initializeBoard();
+            setMessage('Your turn - Light pieces');
+        }
+
+        function newGame() {
+            if (audioContext) {
+                audioContext.close();
+                audioContext = null;
+            }
+            gameStarted = false;
+            document.getElementById('difficultyPanel').classList.remove('hidden');
+            initializeBoard();
+            setMessage('Select difficulty to start');
+        }
+
+        // Initialize on load
+        initializeBoard();
+    </script>
+</body>
+</html>
